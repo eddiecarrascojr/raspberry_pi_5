@@ -5,7 +5,7 @@ prompt:
 prompt_len = . - prompt
 
 output_msg:
-    .asciz "You are "
+    .asciz "'You are "
 output_msg_len = . - output_msg
 
 tab_char:
@@ -13,7 +13,7 @@ tab_char:
 tab_len = 1
 
 output_end:
-    .asciz "years old.\n"
+    .asciz "years old.'\n"
 output_end_len = . - output_end
 
 .align 2
