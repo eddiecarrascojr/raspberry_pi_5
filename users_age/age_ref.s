@@ -1,167 +1,75 @@
+// AArch64 Assembly program to print the reference (memory address) of a variable
+//
+// To compile and run:
+// gcc -o printf_reference_example printf_reference_example.s
+// ./printf_reference_example
+
 .data
 
-prompt:
+prompt_msg:
     .asciz "Please enter your age: "
-prompt_len = . - prompt
+scan_format:
+    .asciz "%d"
 
-before_read_msg: .asciz "\n--- Values Before 'read' Syscall ---\n"
-after_read_msg:  .asciz "\n--- Values After 'read' Syscall ---\n"
-before_write_msg:.asciz "\n--- Values Before 'write' Syscall ---\n"
-reg_x0_msg:      .asciz "x0: "
-reg_x1_msg:      .asciz "x1: "
-reg_x2_msg:      .asciz "x2: "
-reg_x3_msg:      .asciz "x3: "
+// New format strings to print the memory address (reference)
+ref_after_scan_msg:
+    .asciz "Reference before at input: %p\n"
+ref_after_read_msg:
+    .asciz "Reference before at output: %p\n"
 
-hex_prefix: .asciz "0x"
-hex_chars:  .asciz "0123456789abcdef"
-hex_buffer: .space 20
-
+// Final output message
 output_msg:
-    .asciz "You are\t"
-output_msg_len = . - output_msg
+    .asciz "\nYou are %d years old.\n"
 
-output_end:
-    .asciz "\tyears old.\n"
-output_end_len = . - output_end
-
-.align 2
-input_buffer:
-    .space 4
+.bss
+    // A place to store the integer read from scanf
+    .align 8 // Align to 8 bytes for addresses
+input_age:
+    .space 8 // Use 8 bytes for consistency with 64-bit addresses
 
 .text
+.global main
 
-print_register_hex:
-    mov x1, x0
-    ldr x2, =hex_buffer
-    mov x3, #60
+main:
+    // Standard function prologue
+    stp x29, x30, [sp, -16]!  // Store frame pointer and link register
+    mov x29, sp
 
-print_hex_loop:
-    lsr x4, x1, x3
-    and x4, x4, #0xF
-    ldr x5, =hex_chars
-    ldrb w5, [x5, x4]
-    strb w5, [x2], #1
-    subs x3, x3, #4
-    b.ge print_hex_loop
+    // --- 1. Print the prompt ---
+    // printf("Please enter your age: ");
+    ldr x0, =prompt_msg
+    bl printf
 
-    mov w5, #'\n'
-    strb w5, [x2]
+    // --- 2. Get user input ---
+    // scanf("%d", &input_age);
+    ldr x0, =scan_format
+    ldr x1, =input_age        // x1 = address of input_age
+    bl scanf
 
-    mov x0, #1
-    ldr x1, =hex_prefix
-    mov x2, #2
-    mov x8, #64
-    svc #0
+    // --- 3. Print the reference AFTER scanning ---
+    // printf(" -> The address... is: %p\n", &input_age);
+    ldr x0, =ref_after_scan_msg
+    ldr x1, =input_age        // x1 = address of input_age (the reference to print)
+    bl printf
 
-    mov x0, #1
-    ldr x1, =hex_buffer
-    mov x2, #17
-    mov x8, #64
-    svc #0
+    // --- 4. Print the final output message using the value ---
+    // printf("\nYou are %d years old.\n", value_at_input_age);
+    ldr x0, =output_msg
+    ldr x1, =input_age        // First, get the address of input_age
+    ldr w1, [x1]              // Then, load the 32-bit integer VALUE from that address into w1
+    bl printf
 
-    ret
+    // --- 5. Print the reference AFTER it has been read and used ---
+    // printf(" -> The same reference... is: %p\n", &input_age);
+    ldr x0, =ref_after_read_msg
+    ldr x1, =input_age        // x1 = address of input_age (the reference to print)
+    bl printf
 
-.global _start
-_start:
-    mov x0, #1
-    ldr x1, =prompt
-    mov x2, #prompt_len
-    mov x8, #64
-    svc #0
+    // Standard function epilogue
+    mov w0, #0                // Return 0 from main
+    ldp x29, x30, [sp], 16   // Restore frame pointer and link register
+    ret                       // Return from main
 
-    mov x0, #0
-    ldr x1, =input_buffer
-    mov x2, #4
-    mov x8, #63
-
-    sub sp, sp, #32
-    stp x0, x1, [sp, #0]
-    stp x2, x3, [sp, #16]
-
-    ldr x1, =before_read_msg
-    mov x2, #37
-    mov x0, #1
-    mov x8, #64
-    svc #0
-
-    ldr x1, =reg_x0_msg
-    mov x2, #4
-    svc #0
-    ldr x0, [sp, #0]
-    bl print_register_hex
-
-    ldr x1, =reg_x1_msg
-    mov x2, #4
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x0, [sp, #8]
-    bl print_register_hex
-
-    ldr x1, =reg_x2_msg
-    mov x2, #4
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x0, [sp, #16]
-    bl print_register_hex
-
-    ldp x0, x1, [sp, #0]
-    ldp x2, x3, [sp, #16]
-    add sp, sp, #32
-
-    svc #0
-    mov x19, x0
-
-    ldr x1, =after_read_msg
-    mov x2, #36
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x1, =reg_x0_msg
-    mov x2, #4
-    svc #0
-    mov x0, x19
-    bl print_register_hex
-
-    mov x0, #1
-    ldr x1, =output_msg
-    mov x2, #output_msg_len
-    mov x8, #64
-
-    sub sp, sp, #32
-    stp x0, x1, [sp, #0]
-    stp x2, x3, [sp, #16]
-    ldr x1, =before_write_msg
-    mov x2, #38
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x1, =reg_x0_msg
-    mov x2, #4
-    svc #0
-    ldr x0, [sp, #0]
-    bl print_register_hex
-    ldr x1, =reg_x1_msg
-    mov x2, #4
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x0, [sp, #8]
-    bl print_register_hex
-    ldr x1, =reg_x2_msg
-    mov x2, #4
-    mov x0, #1
-    mov x8, #64
-    svc #0
-    ldr x0, [sp, #16]
-    bl print_register_hex
-    ldp x0, x1, [sp, #0]
-    ldp x2, x3, [sp, #16]
-    add sp, sp, #32
-
-    svc #0
-
-    mov x0, #0
-    mov x8, #93
-    svc #0
+// We need to declare printf and scanf as external functions
+.extern printf
+.extern scanf

@@ -14,8 +14,8 @@ tab_len = 1
 
 output_end:
     .asciz "years old.'\n"
-output_end_len = . - output_end
 
+output_end_len = . - output_end
 .align 2
 input_buffer:
     .space 4
