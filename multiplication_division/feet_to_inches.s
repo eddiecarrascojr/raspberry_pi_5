@@ -1,56 +1,49 @@
-// feet_to_inches_arm32.s
-// ARM AArch32 Assembly program for Raspberry Pi 5 (32-bit mode)
-// Converts feet and inches to total inches.
-// This program assumes a simplified environment where input values are
-// conceptually loaded into registers for demonstration of the conversion logic.
-// In a real application, proper string-to-integer (atoi) conversion
-// and system calls for I/O would be necessary.
+.text
+.global main
+_main:
+    SUB sp, sp, #4      // Allocate 4 bytes of stack space
+    STR lr, [sp, #0]    // Save the link register to the stack
 
-.global _start
+    // Prompt for and read the number of feet
+    LDR r0, =prompt_feet // Load the address of the feet prompt string into r0
+    BL printf            // Call printf to display the prompt
+
+    LDR r0, =format_string // Load the address of the format string ("%d") into r0
+    LDR r1, =input_feet    // Load the address of the input_feet variable into r1
+    BL scanf             // Call scanf to read the integer input for feet
+
+    // Prompt for and read the number of inches
+    LDR r0, =prompt_inches // Load the address of the inches prompt string into r0
+    BL printf              // Call printf to display the prompt
+
+    LDR r0, =format_string  // Load the address of the format string ("%d") into r0
+    LDR r1, =input_inches   // Load the address of the input_inches variable into r1
+    BL scanf                // Call scanf to read the integer input for inches
+
+    // Perform the calculation: total_inches = (feet * 12) + inches
+    LDR r1, =input_feet     // Load the address of input_feet into r1
+    LDR r1, [r1]            // Dereference r1 to get the value of input_feet
+    LDR r2, =input_inches   // Load the address of input_inches into r2
+    LDR r2, [r2]            // Dereference r2 to get the value of input_inches
+
+    MOV r3, #12             // Move the integer 12 into r3 for multiplication
+    MUL r1, r1, r3          // Multiply feet (r1) by 12, store result in r1
+
+    ADD r0, r1, r2          // Add the inches (r2) to the result of the multiplication (r1)
+
+    // Display the final calculated total inches
+    MOV r1, r0              // Move the final result (total inches) into r1 for printing
+    LDR r0, =output_string  // Load the address of the output format string into r0
+    BL printf               // Call printf to display the result
+
+    LDR lr, [sp, #0]    // Restore the link register from the stack
+    ADD sp, sp, #4      // Deallocate stack space
+    MOV pc, lr          // Return from main
 
 .data
-    // Data section for messages and constants (not directly used for I/O in this bare example)
-    prompt_feet:        .asciz "Enter feet: "
-    prompt_inches_rem:  .asciz "Enter remaining inches: "
-    result_msg:         .asciz "Total inches: %d\n"
-    newline:            .asciz "\n"
-
-.text
-_start:
-    // --- Program 1: Feet and Inches to Total Inches ---
-
-    // For demonstration, let's hardcode input values.
-    // In a real scenario, you would read these from user input.
-    // Let's assume input_feet = 5 and input_remaining_inches = 7
-
-    mov r4, #5   // r4 will hold the 'feet' value (e.g., 5 feet)
-    mov r5, #7   // r5 will hold the 'remaining inches' value (e.g., 7 inches)
-
-    // Calculate total inches
-    // Formula: total_inches = (feet * 12) + remaining_inches
-
-    // Multiply feet by 12
-    mov r6, #12  // Load 12 into r6
-    mul r7, r4, r6 // r7 = r4 (feet) * r6 (12)
-
-    // Add remaining inches
-    add r0, r7, r5 // r0 = r7 (feet * 12) + r5 (remaining inches)
-                     // Result is in r0 (convention for function return or first argument)
-
-    // --- End of calculation ---
-
-    // In a real program, to print this value, you would need
-    // to convert the integer in r0 to a string and use sys_write.
-    // For example, using sys_write (ARM32):
-    // mov r7, #4          // sys_write (ARM32)
-    // mov r0, #1          // stdout
-    // ldr r1, =buffer     // address of string buffer for output
-    // mov r2, #buffer_len // length of string
-    // svc #0              // execute syscall
-
-    // The value in r0 now holds the total inches.
-
-    // Exit the program (Linux ARM32 system call for exit)
-    mov r7, #1    // sys_exit (ARM32)
-    mov r0, #0    // Return code 0 (success)
-    svc #0        // Execute syscall
+    prompt_feet:    .asciz "Enter the number of feet: "
+    prompt_inches:  .asciz "Enter the number of inches: "
+    format_string:  .asciz "%d"
+    output_string:  .asciz "\nTotal inches: %d\n"
+    input_feet:     .word 0
+    input_inches:   .word 0
