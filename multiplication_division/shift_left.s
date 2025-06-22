@@ -27,38 +27,34 @@ main:
     ldr r0, =prompt_str
     bl printf
 
-    # Read user input using scanf ---
+    # Read user input using scanf
     ldr r0, =scanf_format
     mov r1, sp
     bl scanf
-    ldr r4, [sp]
+    ldr r4, [sp]          
 
-    # Calculate r4 * 2
-    lsl r1, r4, #1
+    # Calculate r4 * 10 using shifts
+    # (r4 * 2) + (r4 * 8)
+    lsl r1, r4, #1        
+    lsl r2, r4, #3        
+    add r5, r1, r2        
 
-    # Calculate r4 * 8
-    lsl r2, r4, #3
-
-    # Add the two results together: (r4 * 2) + (r4 * 8)
-    add r5, r1, r2
-
-    # Print the final result ---
-    ldr r0, =result_str
-    # The original number (from r4) is the second argument for printf
-    mov r1, r4
-    mov r2, r5
+    # Print the final result
+    ldr r0, =result_str  
+    mov r1, r4            
+    mov r2, r5            
     bl printf
 
-    # Exit the program
-    mov r0, #0
-    ldr     lr, [sp, #4]
-    add     sp, sp, #8
-    bx      lr
+    # Exit the program correctly
+    mov r0, #0            
+    ldr lr, [sp, #0]      
+    add sp, sp, #4        
+    bx  lr
 
 .data
-    # Prompt the user for input
+    # prompt for user input
     prompt_str:   .asciz "Enter an integer: "
-    # Format string for scanf to read a integer
+    # scanf format for reading an integer
     scanf_format: .asciz "%d"
-    # Result string for printf to display the output
-    result_str:   .asciz "The result of multiplying by 10 is %d.\n"
+    # print format for the result
+    result_str:   .asciz "%d multiplied by 10 is %d.\n"

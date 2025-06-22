@@ -16,48 +16,45 @@
 #   - r0 as integer of negated number
 #
 
+
 .text
 .global main
 
 main:
-    # Manually save the link register and allocate stack space
-    sub     sp, sp, #4     
-    str     lr, [sp, #0]   
-                           
-    # Prompt the user and read the integer
-    ldr     r0, =prompt_string 
-    bl      printf          
+    # Manual stack 
+    sub     sp, sp, #8
+    str     lr, [sp, #4]
 
-    # Load the address of the format string ("%d") into r0
-    ldr     r0, =format_string 
-    mov     r1, sp          
-    bl      scanf          
-   
+    # Prompt the user
+    ldr     r0, =prompt_string
+    bl      printf
 
+    # Read an integer from the user
+    ldr     r0, =format_string
+    mov     r1, sp
+    bl      scanf
+
+    # Load the integer that scanf just wrote from the stack into r2
     ldr     r2, [sp, #0]
-                           
 
-    # Perform Two's Complement with bitwise NOT and addition
-    mvn     r3, r2          # r3 = ~r2. MVN (Move Not) performs a bitwise NOT.
-    add     r3, r3, #1  
-                           
+    # Perform Two's Complement
+    # r3 = ~r2 (one's complement)
+    mvn     r3, r2
+    # r3 = r3 + 1 (completes the two's complement)
+    add     r3, r3, #1
 
-    # Print the result
+    # Print the original number and its negative value
     ldr     r0, =result_string
-    mov     r1, r2        
-    mov     r2, r3         
-    bl      printf          
+    mov     r1, r2             
+    mov     r2, r3             
+    bl      printf
 
-    # Clean up and return from main
-    mov     r0, #0    
-    ldr     lr, [sp, #4]    
-    add     sp, sp, #8     
-    mov     pc, lr         
+    mov     r0, #0             
+    ldr     lr, [sp, #4]
+    add     sp, sp, #8
+    mov     pc, lr
 
 .data
-    # Prompt message for the user
     prompt_string:  .asciz "Enter an integer: "
-    # Read in the integer from the user
-    format_string:  .asciz "%d" 
-    # Output message for the result
-    result_string:  .asciz "You entered: %d. The negative value is: %d\n"
+    format_string:  .asciz "%d"
+    result_string:  .asciz "The negative value is: -%d\n"
