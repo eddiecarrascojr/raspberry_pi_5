@@ -1,128 +1,111 @@
-# =============================================================================
-# Program:      Max of 3 Integers
-# Author:       Gemini
-# Description:  A 32-bit ARM assembly program that prompts for three integer
-#               values, finds the largest of the three using a dedicated
-#               function, and prints the result.
-# =============================================================================
+#
+# findMax.s
+# A program to find the maximum of three user-input integers.
+# The comparison is implemented using a series of conditional operations.
+# Author: Eduardo Carrasco Jr
+# Date: 07/18/2025
+# Purpose: Reads in user input for three integers,
+# finds the maximum value among them,
+# and prints the result to the console.
+#
+# Compile and run instructions:
+#   Assemble with: as -o findMax.o findMax.s
+#   Link with: gcc -o findMax findMax.o
+#   Run with: ./findMax
 
-.global main
-
-# =============================================================================
-# Data Section
-# Defines constants and strings used in the program.
-# =============================================================================
-.data
-prompt1:      .asciz "Enter the first integer: "
-prompt2:      .asciz "Enter the second integer: "
-prompt3:      .asciz "Enter the third integer: "
-format_str:   .asciz "%d"
-result_msg:   .asciz "The largest value is: %d\n"
-
-# Since we need to store the input from scanf, we need space for them.
-# We'll align to a 4-byte boundary for word-sized data.
-.align 4
-input_val1:   .word 0
-input_val2:   .word 0
-input_val3:   .word 0
-
-
-# =============================================================================
-# Text Section
-# Contains the executable code.
-# =============================================================================
-.text
-.align 2
-
-# -----------------------------------------------------------------------------
-# findMaxOf3(int val1, int val2, int val3)
-# Description:  Compares three integer values and returns the largest.
-# Arguments:
-#   r0: The first integer (val1)
-#   r1: The second integer (val2)
-#   r2: The third integer (val3)
+# Parameters:
+#   R0: The first integer.
+#   R1: The second integer.
+#   R2: The third integer.
 # Returns:
-#   r0: The largest of the three integers.
-# -----------------------------------------------------------------------------
-findMaxOf3:
-    push {lr}           # Push Link Register to the stack to preserve it
+#   R0: The maximum value among the three integers.
+#   Prints out the results to the console.
+#
+.global main
+.extern printf
+.extern scanf
 
-    # Compare the first two values (val1 and val2 in r0 and r1)
-    cmp r0, r1          # Compare r0 with r1
-    bge val1_is_ge      # If r0 >= r1, branch to val1_is_ge
-
-    # If we are here, it means val2 > val1 (r1 > r0)
-    # Now we need to compare val2 and val3 (r1 and r2)
-    cmp r1, r2          # Compare r1 with r2
-    bge val2_is_max     # If r1 >= r2, then r1 is the max
-    
-    # If we are here, it means val3 > val2 > val1 (r2 > r1 > r0)
-    mov r0, r2          # So, move r2 (val3) into r0 as the return value
-    b findMax_exit      # Jump to the exit
-
-val1_is_ge:
-    # If we are here, it means val1 >= val2 (r0 >= r1)
-    # Now we need to compare val1 and val3 (r0 and r2)
-    cmp r0, r2          # Compare r0 with r2
-    bge findMax_exit    # If r0 >= r2, r0 is already the max, so we can exit
-    
-    # If we are here, it means val3 > val1 >= val2 (r2 > r0 >= r1)
-    mov r0, r2          # So, move r2 (val3) into r0 as the return value
-    b findMax_exit      # Jump to the exit
-
-val2_is_max:
-    # If we are here, it means val2 > val1 AND val2 >= val3
-    mov r0, r1          # So, move r1 (val2) into r0 as the return value
-
-findMax_exit:
-    pop {pc}            # Pop the return address from the stack into the PC
-
-
-# -----------------------------------------------------------------------------
-# main
-# Description:  The main entry point of the program.
-# -----------------------------------------------------------------------------
 main:
-    push {ip, lr}       # Push IP and Link Register to the stack
+    SUB sp, sp, #4
+    STR lr, [sp, #0]
 
-    # Prompt for and read the first value
-    ldr r0, =prompt1    # Load address of the first prompt message
-    bl printf           # Call printf to display it
-    ldr r0, =format_str # Load address of the format string for scanf
-    ldr r1, =input_val1 # Load address where the first input will be stored
-    bl scanf            # Call scanf to read the integer
+    ldr r0, =prompt1_msg
+    bl printf
 
-    # Prompt for and read the second value
-    ldr r0, =prompt2    # Load address of the second prompt message
-    bl printf           # Call printf
-    ldr r0, =format_str # Load address of the format string for scanf
-    ldr r1, =input_val2 # Load address for the second input
-    bl scanf            # Call scanf
+    ldr r0, =scan_fmt
+    ldr r1, =val1
+    bl scanf
 
-    # Prompt for and read the third value
-    ldr r0, =prompt3    # Load address of the third prompt message
-    bl printf           # Call printf
-    ldr r0, =format_str # Load address of the format string for scanf
-    ldr r1, =input_val3 # Load address for the third input
-    bl scanf            # Call scanf
+    ldr r0, =prompt2_msg
+    bl printf
 
-    # Prepare arguments for the findMaxOf3 function call
-    ldr r0, =input_val1 # Load address of the first value
-    ldr r0, [r0]        # Dereference to get the actual value into r0
-    ldr r1, =input_val2 # Load address of the second value
-    ldr r1, [r1]        # Dereference to get the actual value into r1
-    ldr r2, =input_val3 # Load address of the third value
-    ldr r2, [r2]        # Dereference to get the actual value into r2
+    ldr r0, =scan_fmt
+    ldr r1, =val2
+    bl scanf
 
-    # Call the function to find the maximum
-    bl findMaxOf3       # Branch and Link to the function
-                        # The result will be in r0 upon return
+    ldr r0, =prompt3_msg
+    bl printf
 
-    # Prepare arguments to print the result
-    mov r1, r0          # Move the result from findMaxOf3 (in r0) to r1 for printf
-    ldr r0, =result_msg # Load the address of the result message string into r0
-    bl printf           # Call printf to display the final result
+    ldr r0, =scan_fmt
+    ldr r1, =val3
+    bl scanf
 
-    # Exit the program
-    mov r0, #0          # Return 0 to the OS
-    pop {ip, pc}        # Pop IP and PC to return from main
+    ldr r0, =val1
+    ldr r0, [r0]
+
+    ldr r1, =val2
+    ldr r1, [r1]
+
+    ldr r2, =val3
+    ldr r2, [r2]
+
+    bl findMaxOf3
+
+    ldr r3, =max_val
+    str r0, [r3]
+
+    ldr r0, =result_msg
+    ldr r3, =max_val
+    ldr r1, [r3]
+    bl printf
+
+    mov r0, #0
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    bx lr
+
+# Function to find the maximum of three integers
+# Parameters:
+#   R0: First integer
+#   R1: Second integer
+#   R2: Third integer
+# Returns:
+#   R0: Maximum of the three integers
+findMaxOf3:
+#   Compare R0 and R1
+    cmp r0, r1
+    # If R0 is greater than R1, keep R0
+    movle r0, r1
+#   Compare the result with R2
+    cmp r0, r2
+    # If R0 is less than or equal to R2, set R0 to R2
+    movle r0, r2
+
+    bx lr
+
+# Data section for strings and variables
+# Printf and scanf format strings
+.data
+    prompt1_msg: .asciz "Enter the first integer: "
+    prompt2_msg: .asciz "Enter the second integer: "
+    prompt3_msg: .asciz "Enter the third integer: "
+    result_msg:  .asciz "The maximum value is: %d\n"
+    scan_fmt:    .asciz "%d"
+
+    .align 2
+    val1: .word 0
+    val2: .word 0
+    val3: .word 0
+    max_val: .word 0
+
+.text
