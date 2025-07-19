@@ -1,8 +1,9 @@
 # -----------------------------------------------------------------------------
 # isAlpha.s
-# A program to check if a user-input character is alphabetic.
+# Purpose: A program to check if a user-input character is alphabetic.
 # The check is implemented using a logical operation.
-# Author: Eduardo Carrasco Jr\
+# 
+# Author: Eduardo Carrasco Jr
 # Date: 07/18/2025
 # Purpose: Reads in user input for a character,
 # checks if it is an alphabetic character (A-Z or a-z),

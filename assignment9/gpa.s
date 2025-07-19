@@ -1,185 +1,121 @@
-.data
-# -----------------------------------------------------------------------------
-# Data Section
 #
-# This section contains all the data constants and strings used in the program.
-# -----------------------------------------------------------------------------
-
-name_prompt:      .asciz  "Enter student's name: "
-avg_prompt:       .asciz  "Enter student's average: "
-result_msg:       .asciz  "Student: "
-grade_msg:        .asciz  ", Grade: "
-error_msg:        .asciz  "Error: The average must be between 0 and 100.\n"
-newline:          .asciz  "\n"
-
-# Buffer to store the user's input for the name
-name_buffer:      .space  32
-# Buffer to store the user's input for the average as a string
-avg_buffer:       .space  8
+# gpa.s
+# Purpose: A program to reads in a student's name and average score,
+# checks if the average score is within a valid range (0-100),
+# and assigns a letter grade based on the score.
+# If the score is out of range, it prints an error message.
+# 
+# Author: Eduardo Carrasco Jr
+# Date: 07/18/2025
+#
+# Compile and run instructions:
+#   AssemBLe with: as -o gpa.o gpa.s
+#   Link with: gcc -o gpa gpa.o
+#   Run with: ./gpa
+#
+# Parameters:
+#   R0: The student's name (string).
+#   R1: The student's average score (integer).
+# Returns:
+#   R0: The letter grade (A, B, C, or F).
+#   Prints out the student's name and grade to the console.
 
 .text
-# -----------------------------------------------------------------------------
-# Text Section
-#
-# This section contains the executable code for the program.
-# -----------------------------------------------------------------------------
-.global main
+    .global main
+    .extern printf
+    .extern scanf
 
 main:
-    # --- Prompt for and read the student's name ---
-    ldr r0, =name_prompt   # Load the address of the name prompt string
-    bl  print_string       # Call the print_string subroutine
+    # Standard function prologue for a C-style function
+    push {fp, lr}
+    ADD fp, sp, #4
 
-    ldr r0, =name_buffer   # Load the address of the name buffer
-    mov r1, #32            # Set the maximum number of bytes to read
-    bl  read_string        # Call the read_string subroutine
+    LDR r0, =prompt_combined
+    BL printf
 
-    # --- Prompt for and read the student's average ---
-    ldr r0, =avg_prompt    # Load the address of the average prompt string
-    bl  print_string       # Call the print_string subroutine
+    # Scanf format string ("%s %d")
+    LDR r0, =fmt_s_d
+    LDR r1, =student_name_buffer
+    LDR r2, =average_score
+    BL scanf
 
-    ldr r0, =avg_buffer    # Load the address of the average buffer
-    mov r1, #8             # Set the maximum number of bytes to read
-    bl  read_string        # Call the read_string subroutine
+    # Load the student's score
+    LDR r1, =average_score
+    LDR r1, [r1]
 
-    # --- Convert the average string to an integer ---
-    ldr r0, =avg_buffer    # Load the address of the average buffer
-    bl  string_to_int      # Call the string_to_int subroutine
-                           # The integer result will be in r0
+    CMP r1, #0
+    BLT print_error
 
-    # --- Validate the average ---
-    cmp r0, #0             # Compare the average with 0
-    blt error_exit         # If less than 0, branch to error_exit
-    cmp r0, #100           # Compare the average with 100
-    bgt error_exit         # If greater than 100, branch to error_exit
+    CMP r1, #100
+    BGT print_error
 
-    # --- Determine the grade ---
-    mov r4, r0             # Move the average to r4 for safekeeping
-    cmp r0, #90            # Compare with 90
-    bge grade_a            # If greater than or equal, it's an 'A'
-    cmp r0, #80            # Compare with 80
-    bge grade_b            # If greater than or equal, it's a 'B'
-    cmp r0, #70            # Compare with 70
-    bge grade_c            # If greater than or equal, it's a 'C'
-    b   grade_f            # Otherwise, it's an 'F'
+    CMP r1, #90
+    BGE print_grade_A
 
-grade_a:
-    mov r5, #'A'           # Set the grade to 'A'
-    b   print_result
+    CMP r1, #80
+    BGE print_grade_B
 
-grade_b:
-    mov r5, #'B'           # Set the grade to 'B'
-    b   print_result
+    CMP r1, #70
+    BGE print_grade_C
 
-grade_c:
-    mov r5, #'C'           # Set the grade to 'C'
-    b   print_result
+    B print_grade_F
 
-grade_f:
-    mov r5, #'F'           # Set the grade to 'F'
-    b   print_result
+print_grade_A:
+    MOV r2, #'A'
+    B print_result
+
+print_grade_B:
+    MOV r2, #'B'
+    B print_result
+
+print_grade_C:
+    MOV r2, #'C'
+    B print_result
+
+print_grade_F:
+    MOV r2, #'F'
+    B print_result
 
 print_result:
-    # --- Print the student's name ---
-    ldr r0, =result_msg    # Load the address of the result message
-    bl  print_string       # Print "Student: "
+    LDR r0, =output_grade
+    LDR r1, =student_name_buffer
+    BL printf
 
-    ldr r0, =name_buffer   # Load the address of the student's name
-    bl  print_string       # Print the name
+    B exit_program
 
-    # --- Print the grade message and the grade ---
-    ldr r0, =grade_msg     # Load the address of the grade message
-    bl  print_string       # Print ", Grade: "
+print_error:
+    LDR r0, =error_range
+    BL printf
+    # If there's an error, typically you'd return a non-zero exit code
+    MOV r0, #1
+    B exit_program_common_return
 
-    mov r0, r5             # Move the grade character to r0
-    bl  print_char         # Print the grade
+exit_program:
+    MOV r0, #0 # Set return value to 0 for success
+    # Fall through to common return
 
-    ldr r0, =newline       # Load the address of the newline character
-    bl  print_string       # Print a newline
+exit_program_common_return:
+    # Standard function epilogue for a C-style function
+    SUB sp, fp, #4
+    POP {fp, lr}
+    BX lr
 
-    b   exit               # Branch to the exit
+.data
+    .align 4
+    # Format string for reading a string and an integer
+    fmt_s_d: .asciz "%s %d" 
 
-error_exit:
-    # --- Print the error message ---
-    ldr r0, =error_msg     # Load the address of the error message
-    bl  print_string       # Print the error message
+.data
+    .align 4
+    prompt_combined:    .asciz "Enter student name (single word) and average (e.g., Alice 85): "
+    error_range:        .asciz "Error: Average must be between 0 and 100.\n"
+    output_grade:       .asciz "Student: %s, Grade: %c\n"
+    grade_A:            .ascii "A"
+    grade_B:            .ascii "B"
+    grade_C:            .ascii "C"
+    grade_F:            .ascii "F"
+    newline:            .asciz "\n"
 
-exit:
-    # --- Exit the program ---
-    mov r7, #1             # syscall number for exit
-    mov r0, #0             # Exit status
-    svc #0                 # Make the system call
-
-# -----------------------------------------------------------------------------
-# Subroutines
-# -----------------------------------------------------------------------------
-
-# --- print_string: Prints a null-terminated string ---
-# r0: Address of the string
-print_string:
-    push {lr}              # Push the link register to the stack
-    mov r2, r0             # Copy the string address to r2
-2:
-    ldrb r1, [r2], #1      # Load a byte and increment the pointer
-    cmp  r1, #0            # Check for the null terminator
-    beq  3f                # If it's the end of the string, branch forward
-    mov  r7, #4            # syscall for write
-    mov  r0, #1            # stdout
-    push {r2}              # Save r2
-    mov  r2, #1            # Number of bytes to write
-    push {r1}
-    mov  r1, sp
-    svc  #0                # Make the system call
-    pop  {r1}
-    pop  {r2}              # Restore r2
-    b    2b                # Branch back to the loop
-3:
-    pop  {pc}              # Pop the return address to the program counter
-
-# --- read_string: Reads a string from standard input ---
-# r0: Address of the buffer
-# r1: Maximum number of bytes to read
-read_string:
-    push {lr}              # Push the link register
-    mov  r7, #3            # syscall for read
-    mov  r0, #0            # stdin
-    mov  r2, r1            # Number of bytes
-    mov  r1, r0            # Buffer address
-    svc  #0                # Make the system call
-    pop  {pc}              # Return
-
-# --- string_to_int: Converts a string to an integer ---
-# r0: Address of the string
-# Returns the integer in r0
-string_to_int:
-    push {r4, r5, lr}      # Push registers to the stack
-    mov  r4, r0            # Copy the string address to r4
-    mov  r0, #0            # Initialize the result to 0
-    mov  r5, #10           # The base for decimal conversion
-1:
-    ldrb r1, [r4], #1      # Load a byte and increment the pointer
-    cmp  r1, #'\n'         # Check for newline
-    beq  2f
-    cmp  r1, #'0'          # Check if it's a digit
-    blt  1b                # If less than '0', it's not a digit
-    cmp  r1, #'9'
-    bgt  1b                # If greater than '9', it's not a digit
-    sub  r1, r1, #'0'      # Convert ASCII digit to integer
-    mul  r0, r0, r5        # Multiply the current result by 10
-    add  r0, r0, r1        # Add the new digit
-    b    1b
-2:
-    pop  {r4, r5, pc}      # Pop registers and return
-
-# --- print_char: Prints a single character ---
-# r0: The character to print
-print_char:
-    push {lr}              # Push the link register
-    mov  r7, #4            # syscall for write
-    mov  r1, sp            # Point to the character on the stack
-    push {r0}              # Push the character
-    mov  r0, #1            # stdout
-    mov  r2, #1            # Number of bytes
-    svc  #0                # Make the system call
-    pop  {r0}
-    pop  {pc}              # Return
+    student_name_buffer: .skip 256
+    average_score:      .word 0
+# End of Program gps.s
