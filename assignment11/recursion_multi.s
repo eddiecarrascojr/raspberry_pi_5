@@ -17,18 +17,7 @@
 #   ./arm_recursive_multiply
 # -----------------------------------------------------------------------------
 
-data
-# String constants for user prompts and output formatting
-prompt_m:       .asciz "Enter the multiplier (m): "
-prompt_n:       .asciz "Enter the number of iterations (n): "
-result_msg:     .asciz "Result: %d\n"
-format_int:     .asciz "%d"
 
-# Memory allocation for user input. .word allocates 4 bytes.
-input_m:        .word 0
-input_n:        .word 0
-
-.text
 .global main
 
 # -----------------------------------------------------------------------------
@@ -154,4 +143,17 @@ main:
 # We need to link with the C library for printf and scanf
 .extern printf
 .extern scanf
+
+.data
+# String constants for user prompts and output formatting
+prompt_m:       .asciz "Enter the multiplier (m): "
+prompt_n:       .asciz "Enter the number of iterations (n): "
+result_msg:     .asciz "Result: %d\n"
+format_int:     .asciz "%d"
+
+# Memory allocation for user input. .word allocates 4 bytes.
+input_m:        .word 0
+input_n:        .word 0
+
+.text
 # End of the assembly file

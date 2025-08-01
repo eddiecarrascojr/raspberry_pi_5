@@ -20,96 +20,226 @@
 #   Output:
 #       r0: The nth Fibonacci number
 # -----------------------------------------------------------------------------
-.global main
-
-.text
-fib:
-    # --- Function Prologue ---
-    # Save the link register and r4 on the stack. We need to save lr because
-    # we are making function calls (to ourself). We save r4 to hold the
-    # value of n across recursive calls.
-    push    {r4, lr}
-
-    # --- Base Case Check ---
-    cmp     r0, #1          # Compare n with 1
-    ble     fib_base_cases  # If n <= 1, jump to handle base cases
-
-    # --- Recursive Step: F(n) = F(n-1) + F(n-2) ---
-    # Calculate F(n-1)
-    mov     r4, r0          # Save original n in r4 before modifying r0
-    sub     r0, r0, #1      # r0 = n - 1
-    bl      fib             # Recursively call fib(n-1). Result is in r0.
-
-    # At this point, r0 contains fib(n-1). We need to save it.
-    mov     r1, r0          # Store fib(n-1) in r1
-
-    # Calculate F(n-2)
-    sub     r0, r4, #2      # r0 = n - 2 (using the saved n from r4)
-    bl      fib             # Recursively call fib(n-2). Result is in r0.
-
-    # At this point, r0 contains fib(n-2) and r1 contains fib(n-1).
-    # Add them together for the final result.
-    add     r0, r1, r0      # r0 = fib(n-1) + fib(n-2)
-
-    b       fib_done        # Branch to the end of the function
-
-fib_base_cases:
-    # If n <= 1, then F(n) = n.
-    # The value of n is already in r0, so we don't need to do anything.
-    # The function will simply return r0.
-
-fib_done:
-    # --- Function Epilogue ---
-    # Restore the registers we saved at the beginning
-    pop     {r4, lr}
-    bx      lr              # Return to the caller
-
-# Main function to handle user input and output
-main:
-    # --- Function Prologue ---
-    # Manually save the link register (return address) on the stack
-    sub     sp, sp, #4      # Decrement stack pointer to make space
-    str     lr, [sp]        # Store the link register on the stack
-
-    # --- Prompt User for Input ---
-    ldr     r0, =prompt_msg # Load address of the prompt message
-    bl      printf          # Call printf to display the prompt
-
-    # --- Read User Input ---
-    ldr     r0, =input_format # Load address of the format string "%d"
-    ldr     r1, =input_num    # Load address of where to store the input number
-    bl      scanf             # Call scanf to read an integer from the user
-
-    # --- Call Fibonacci Function ---
-    ldr     r0, =input_num    # Load address of the input number
-    ldr     r0, [r0]          # Dereference to get the actual value of n into r0
-    bl      fib               # Call the fib function. The result will be in r0.
-
-    # --- Print the Result ---
-    mov     r1, r0            # Move the result (fib(n)) into r1 for printing
-    ldr     r0, =result_msg   # Load address of the result message format string
-    bl      printf            # Call printf to display the final result
-
-    # --- Exit Program ---
-    mov     r0, #0            # Return 0 to indicate success
-    # Manually restore the link register and return to the OS
-    ldr     lr, [sp]        # Load the saved return address back into lr
-    add     sp, sp, #4      # Increment stack pointer to deallocate space
-    bx      lr              # Branch to the address in lr to return
 
 .data
 
-# Standard input and output strings
+// Text and data for the program's messages.
 prompt_msg:
-    .asciz "Enter a non-negative integer (n) to find the Fibonacci number: "
+    .ascii "Enter a non-negative integer (n) to calculate F(n): \0"
+prompt_msg_len = . - prompt_msg
 
-input_format:
-    .asciz "%d"
+input_buffer:
+    .space 16
 
-result_msg:
-    .asciz "The Fibonacci number is: %d\n"
+input_n:
+    .word 0
 
-.bss
-# This section is for uninitialized data.
-input_num:
-    .word 0  # A 4-byte space to store the integer read from the user
+result_fib:
+    .word 0
+
+// A static buffer to hold the output strings from itoa_custom.
+output_buffer:
+    .space 20
+
+// Individual strings for printing
+f_paren_msg:
+    .ascii "F(\0"
+f_paren_len = . - f_paren_msg
+
+eq_msg:
+    .ascii ") = \0"
+eq_len = . - eq_msg
+
+newline_char:
+    .ascii "\n\0"
+newline_len = . - newline_char
+
+
+.text
+.section .text
+.global _start
+
+// Main program entry point.
+_start:
+    // Prompt the user for input.
+    mov r0, #1                   // file descriptor: stdout
+    ldr r1, =prompt_msg          // address of string
+    mov r2, #prompt_msg_len      // length of string
+    mov r7, #4                   // write syscall
+    swi 0
+
+    // Read user input.
+    mov r0, #0                   // file descriptor: stdin
+    ldr r1, =input_buffer        // address of buffer
+    mov r2, #16                  // max length
+    mov r7, #3                   // read syscall
+    swi 0
+    
+    // Convert input string to integer.
+    ldr r0, =input_buffer
+    bl atoi_custom
+    ldr r1, =input_n
+    str r0, [r1]
+
+    // Call the recursive Fibonacci function.
+    ldr r0, [r1]
+    bl fib_recursive
+    
+    // Store the result.
+    ldr r1, =result_fib
+    str r0, [r1]
+
+    // Print the final result.
+    bl print_result
+
+    // Exit the program.
+    mov r0, #0
+    mov r7, #1
+    swi 0
+
+
+// Recursive Fibonacci function.
+// r0 = n
+// returns: r0 = F(n)
+fib_recursive:
+    push {r4, lr}     
+    mov r4, r0
+
+    // Check for base cases
+    cmp r0, #0
+    beq fib_zero_exit
+    cmp r0, #1
+    beq fib_one_exit
+
+    // Calculate F(n-1)
+    sub r0, r4, #1
+    bl fib_recursive
+    mov r1, r0  
+
+    // Calculate F(n-2)
+    sub r0, r4, #2
+    bl fib_recursive 
+    
+    // Add the two results
+    add r0, r0, r1
+    b fib_return
+
+fib_zero_exit:
+    mov r0, #0
+    b fib_return
+    
+fib_one_exit:
+    mov r0, #1
+    
+fib_return:
+    pop {r4, lr} 
+    bx lr
+
+// Converts a null-terminated ASCII string to an integer.
+// r0 = address of string
+// returns: r0 = integer value
+atoi_custom:
+    push {r1, r2, r3, lr}
+    mov r1, #0
+    mov r2, #0
+    mov r3, #0
+
+atoi_loop:
+    ldrb r2, [r0]
+    cmp r2, #0
+    beq atoi_done
+
+    cmp r2, #'0'
+    blt atoi_next_char
+    cmp r2, #'9'
+    bgt atoi_next_char
+
+    sub r3, r2, #'0'
+    mov r4, #10
+    mul r5, r1, r4
+    mov r1, r5
+    add r1, r1, r3
+
+atoi_next_char:
+    add r0, r0, #1
+    b atoi_loop
+
+atoi_done:
+    mov r0, r1
+    pop {r1, r2, r3, lr}
+    bx lr
+
+// A function to print the final output string.
+print_result:
+    push {r1, r2, r3, lr}
+    
+    // Print "F("
+    mov r0, #1
+    ldr r1, =f_paren_msg
+    mov r2, #2
+    mov r7, #4
+    swi 0
+    
+    // Print the value of n
+    ldr r0, =input_n
+    ldr r0, [r0]
+    bl itoa_custom
+    mov r1, r0
+    mov r0, #1
+    mov r2, r3
+    mov r7, #4
+    swi 0
+    
+    // Print ") = "
+    mov r0, #1
+    ldr r1, =eq_msg
+    mov r2, #4
+    mov r7, #4
+    swi 0
+    
+    // Print the result
+    ldr r0, =result_fib
+    ldr r0, [r0]
+    bl itoa_custom
+    mov r1, r0
+    mov r0, #1
+    mov r2, r3
+    mov r7, #4
+    swi 0
+    
+    // Print the newline character
+    mov r0, #1
+    ldr r1, =newline_char
+    mov r2, #1
+    mov r7, #4
+    swi 0
+    
+    pop {r1, r2, r3, lr}
+    bx lr
+    
+// Converts an integer to a null-terminated ASCII string.
+// r0 = integer
+// returns: r0 = address of string, r3 = length of string
+itoa_custom:
+    push {r1, r2, r4, r5, r6, lr}
+    ldr r1, =output_buffer + 19
+    mov r2, #0
+    mov r4, #10
+    mov r5, r1
+    
+itoa_loop:
+    udiv r6, r0, r4
+    mls r1, r6, r4, r0
+    add r1, r1, #'0'
+    strb r1, [r5]
+    sub r5, r5, #1
+    mov r0, r6
+    add r2, r2, #1
+    cmp r0, #0
+    bne itoa_loop
+    
+    add r5, r5, #1
+    mov r0, r5
+    mov r3, r2
+    pop {r1, r2, r4, r5, r6, lr}
+    bx lr
