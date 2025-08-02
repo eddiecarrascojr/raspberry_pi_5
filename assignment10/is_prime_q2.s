@@ -1,13 +1,13 @@
 # is_prime_q2.s
-# Purpose: This program checks if a user-input number is prime.
-# It prompts the user for a number, checks if it is prime, and prints the result.
-# If the number is not prime, it prints "Number n is not prime".
-# If the number is prime, it prints "Number n is prime".
+# Purpose: This program checks if a user-input numBer is prime.
+# It prompts the user for a numBer, checks if it is prime, and prints the result.
+# If the numBer is not prime, it prints "NumBer n is not prime".
+# If the numBer is prime, it prints "NumBer n is prime".
 # The user can enter -1 to exit the program.
-# If the user enters 0, 1, 2, or any negative number other than -1, it prints an error message.
+# If the user enters 0, 1, 2, or any negative numBer other than -1, it prints an error message.
 #
 # Arguments:
-#   r0: The number to check (integer).
+#   r0: The numBer to check (integer).
 #   r1: The divisor (integer).
 # Returns:
 #   r0: 1 if prime, 0 if not prime.
@@ -15,90 +15,97 @@
 # Author: Eduardo Carrasco Jr
 # Date: 07/25/2025
 #
-# Compile and run instructions:
-#   Assemble and Link with: gcc -o is_prime_q2 is_prime_q2.s
+# Compile and run inSTRuctions:
+#   AssemBLE and Link with: gcc -o is_prime_q2 is_prime_q2.s
 #   Run with: ./is_prime_q2
 #
 # Parameters:
-#   R0: The number to check (integer).
+#   R0: The numBer to check (integer).
 #   R1: The divisor (integer).
-# Prints out whether the number is prime or not to the console.
+# Prints out whether the numBer is prime or not to the console.
 # Returns:
 #   R0: 1 if prime, 0 if not prime.
 #
 
-.global main
+.gloBal main
 
 .extern printf
 .extern atoi
 .extern gets
 .extern __aeabi_uidiv
 
+# Main function
 main:
-    sub sp, sp, #4
-    str lr, [sp, #0]
-
+    SUB sp, sp, #4
+    STR lr, [sp, #0]
+# Main loop to prompt user for input
 main_loop:
-    ldr r0, =prompt_msg
-    bl printf
+    LDR r0, =prompt_msg
+    BL printf
 
-    ldr r0, =input_buffer
-    bl gets
+    LDR r0, =input_buffer
+    BL gets
 
-    ldr r0, =input_buffer
-    bl atoi
-    mov r4, r0
+    LDR r0, =input_buffer
+    BL atoi
+    MOV r4, r0
 
-    cmp r4, #-1
-    beq exit_program
+    CMP r4, #-1
+    BEQ exit_program
 
-    cmp r4, #2
-    ble invalid_input
+    CMP r4, #2
+    BLE invalid_input
 
-    mov r5, #2
+    MOV r5, #2
 
+# Prime check loop
 prime_check_loop:
-    mul r6, r5, r5
-    cmp r6, r4
-    bgt number_is_prime
+    MUL r6, r5, r5
+    CMP r6, r4
+    BGT number_is_prime
 
-    mov r0, r4
-    mov r1, r5
-    bl __aeabi_uidiv
-    mov r6, r0
+    MOV r0, r4
+    MOV r1, r5
+    BL __aeabi_uidiv
+    MOV r6, r0
 
-    mul r6, r6, r5
-    sub r6, r4, r6
+    MUL r6, r6, r5
+    SUB r6, r4, r6
 
-    cmp r6, #0
-    beq number_is_not_prime
+    CMP r6, #0
+    BEQ number_is_not_prime
 
-    add r5, r5, #1
-    b prime_check_loop
+    ADD r5, r5, #1
+    B prime_check_loop
 
+# Check if the number is prime
 number_is_prime:
-    ldr r0, =is_prime_msg
-    mov r1, r4
-    bl printf
-    b main_loop
+    LDR r0, =is_prime_msg
+    MOV r1, r4
+    BL printf
+    B main_loop
 
+# Check if the number is not prime
 number_is_not_prime:
-    ldr r0, =not_prime_msg
-    mov r1, r4
-    bl printf
-    b main_loop
+    LDR r0, =not_prime_msg
+    MOV r1, r4
+    BL printf
+    B main_loop
 
+# Handle invalid input
 invalid_input:
-    ldr r0, =error_msg
-    bl printf
-    b main_loop
+    LDR r0, =error_msg
+    BL printf
+    B main_loop
 
+# Exit program
 exit_program:
-    mov r0, #0
-    ldr lr, [sp, #0]
-    add sp, sp, #4
-    mov pc, lr
+    MOV r0, #0
+    LDR lr, [sp, #0]
+    ADD sp, sp, #4
+    MOV pc, lr
 
+# printf format strings for input and output
 .data
 prompt_msg:   .asciz "Enter a number (-1 to quit): "
 is_prime_msg: .asciz "Number %d is prime\n"

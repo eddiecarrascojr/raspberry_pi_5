@@ -1,7 +1,7 @@
 # Homework assignment 10
 ## Screenshots 
 
-Each screenshot should be named as question1.png, question2.png, question3.png and question4.png.
+Each screenshot should be named as q1.png, q1.png, q3.png and q4.png.
 
 ### Question 1.
 Write a program to find prime numbers from 3 to n in a loop by dividing the number n by all numbers from 2..n/2 in an inner loop.  Determine if n is divisible by any number by creating your own remainder function or via some other means. You are not permitted to use any form of mod or rem operator. If n is divisible, leave the inner loop. If the limit of n/2 is reached and the inner loop has not been exited, the number is prime and you should output the number. So if the user were to enter 25, your program would print out "3, 5, 7, 11, 13, 17, 19, 23".

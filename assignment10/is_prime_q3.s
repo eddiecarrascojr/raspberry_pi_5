@@ -13,7 +13,7 @@
 # Date: 07/25/2025
 #
 # Compile and run instructions:
-#   Assemble and Link with: gcc -o is_prime_q3 is_prime_q3.s
+#   AssemBLe and Link with: gcc -o is_prime_q3 is_prime_q3.s
 #   Run with: ./is_prime_q3
 #
 # Parameters:
@@ -25,83 +25,85 @@
 #
 
 .global main
-
+# Main function 
+# This function initializes the random number generation, prompts the user for a maximum number,
+# generates a random number within that range, and then enters a loop to allow the user to
 main:
-    ldr r0, =prompt_max
-    bl printf
+    LDR r0, =prompt_max
+    BL printf
 
-    sub sp, sp, #4
-    mov r1, sp
-    ldr r0, =format_int
-    bl scanf
-    ldr r6, [sp]
-    add sp, sp, #4
+    SUB sp, sp, #4
+    MOV r1, sp
+    LDR r0, =format_int
+    BL scanf
+    LDR r6, [sp]
+    ADD sp, sp, #4
 
     # If user enters 0, re-prompt
-    cmp r6, #0
+    CMP r6, #0
     beq main
 
-    mov r0, #0
-    bl time
-    bl srand
-    bl rand
+    MOV r0, #0
+    BL time
+    # Seed the random number generator with
+    BL srand
+    BL rand
 
-    # Corrected Modulo Calculation 
-    # Save random number in a safe register (r7)
-    # Move max_value into r1 for division
-    # r0 = quotient. r0-r3 are now clobbered.
-    # r0 = quotient * max_value (use safe r6)
-    # r0 = original_random (from r7) - (quotient * max_value)
-    mov r7, r0          
-    mov r1, r6         
-    bl __aeabi_uidiv    
-    mul r0, r0, r6      
-    sub r0, r7, r0      
+    MOV r7, r0          
+    MOV r1, r6         
+    BL __aeabi_uidiv    
+    MUL r0, r0, r6      
+    SUB r0, r7, r0      
 
-    add r0, r0, #1
-    mov r4, r0
-    mov r5, #0
+    ADD r0, r0, #1
+    MOV r4, r0
+    MOV r5, #0
 
+# Guessing loop
 guess_loop:
-    ldr r0, =prompt_guess
-    bl printf
+    LDR r0, =prompt_guess
+    BL printf
 
-    sub sp, sp, #4
-    mov r1, sp
-    ldr r0, =format_int
-    bl scanf
-    ldr r2, [sp]
-    add sp, sp, #4
+    SUB sp, sp, #4
+    MOV r1, sp
+    LDR r0, =format_int
+    BL scanf
+    LDR r2, [sp]
+    ADD sp, sp, #4
 
-    add r5, r5, #1
+    ADD r5, r5, #1
 
-    cmp r2, r4
-    blt too_low
-    bgt too_high
-    beq correct
+    CMP r2, r4
+    BLT too_low
+    BGT too_high
+    BEQ correct
 
+# if the guess is too low, print a message and loop back
 too_low:
-    ldr r0, =msg_low
-    bl printf
-    b guess_loop
+    LDR r0, =msg_low
+    BL printf
+    B guess_loop
 
+# if the guess is too high, print a message and loop back
 too_high:
-    ldr r0, =msg_high
-    bl printf
-    b guess_loop
+    LDR r0, =msg_high
+    BL printf
+    B guess_loop
 
+# If the guess is correct print the number of tries
 correct:
-    ldr r0, =msg_correct
-    bl printf
-    mov r1, r5
-    ldr r0, =format_int
-    bl printf
-    ldr r0, =msg_tries
-    bl printf
+    LDR r0, =msg_correct
+    BL printf
+    MOV r1, r5
+    LDR r0, =format_int
+    BL printf
+    LDR r0, =msg_tries
+    BL printf
 
-    mov r7, #1
-    svc #0
+    MOV r7, #1
+    SVC #0
 
+# printf and scanf functions for I/O operations of user input and output
 .data
     prompt_max: .asciz "Enter the maximum number for the guessing game (must be > 0): "
     prompt_guess: .asciz "Enter your guess: "
