@@ -1,12 +1,12 @@
-Using ARM Assembly 32 bit and running on a Raspberry Pi 5.
+Using ARM Assembly 32 bit V7 and running on a Raspberry Pi 5.
 
 We want to create a RSA algorithm with the following requirements.
 Minimal requirements for the assignment:
 1. Display prompts for user actions:
       a. Generate Private and Public Keys
       b. Encrypt a Message
-      c. Decrypt a Message
-2. Generate Private and Public Keys
+
+2. In order to Generate Private and Public Keys
     a. Display prompts to input two positive integers p and q. For simplicity, let’s keep p < 50 and q < 50. Can be larger is implementing the function for large values.
     b. Check if both integers are prime
     c. Calculate the modulus n for the public and private keys: n = p * q
@@ -19,35 +19,6 @@ Minimal requirements for the assignment:
     g. Write an ARM function, cpubexp for calculating the public key exponent. Additionally, write an ARM gcd function to find the greatest common divisor used in calculating the public key exponent.
     h. Calculate the private key exponent d such that de ≡ 1 (mod Φ(n)) ➔ d = (1 + x * Φ(n) ) / e for some integer x
 
-Write an ARM function, cprivexp for calculating the private key exponent.
-3. Encrypt a Message
-    a. Prompt to enter a message for encryption
-    b. Example: “Hello from TEAM 4” or some similar short message.
-    c. Using the message you have input, determine the ascii equivalent for each character.
-
-The numeric ascii value will be used for encryption/decryption purposes. For simplicity,
-you can encrypt each character separately. I also recommend spaces between each
-output value so reading will be easier. Your encrypted message should be written to a
-file called “encrypted.txt”. Make sure you open and close the file properly.
-d. We will use the following equation to encrypt the characters of our message.
-Using our public key values (n, e) for the equation c = 𝒎𝒆 mod n we have the following:
--  c is our cipher text (encrypted text) value
--  m is the individual plaintext character of our message “H”,”e”,”l”,”l”,”o”,”
-“,”f”,”r”,”o”,”m”,” “, “T”,”E”,”A”,”M”,” “,”x” or whatever small message you
-chose.
--  e is our public key exponent from step 2
--  n is the calculated modulus from step 2 for our public and private keys.
-4. Decrypt a Message
-    a. Open and read the file “encrypted.txt” that contains encrypted text.
-    b. We will use the following equation to decrypt the characters of our message.
-Using our private key values (n, d) for the equation m = 𝒄𝒅 mod n we have the following:
--  m is the decrypted individual plaintext character of our message 
--  c is our cipher text (encrypted text) value
--  d is our private key exponent from step 2
--  n is the calculated modulus from step 2 for our public and private keys.
-    c. Write your decrypted message to a file called “plaintext.txt”
-
-
 The following functions must be included:
 1. gcd – function to find the greatest common divisor
 2. pow – function to perform exponentiation
@@ -55,4 +26,3 @@ The following functions must be included:
 4. cpubexp – function for all calculations related to the public key exponent
 5. cprivexp – function for all calculations related to the private key exponent
 6. encrypt – function to perform encryption
-7. decrypt – function to perform decryption
